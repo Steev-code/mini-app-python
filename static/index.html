@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Mini App Usuarios</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#f4f4f4;
+text-align:center;
+}
+
+.container{
+width:400px;
+margin:auto;
+margin-top:40px;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
+input{
+padding:10px;
+width:70%;
+}
+
+button{
+padding:10px;
+background:#007bff;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+li{
+margin:5px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Registro de Usuarios</h2>
+
+<input id="nombre" placeholder="nombre">
+<button onclick="guardar()">Guardar</button>
+
+<h3>Usuarios</h3>
+
+<ul id="lista"></ul>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000"
+
+function cargar(){
+
+fetch(API+"/usuarios")
+.then(r=>r.json())
+.then(data=>{
+
+let lista=document.getElementById("lista")
+
+lista.innerHTML=""
+
+data.forEach(u=>{
+
+let li=document.createElement("li")
+
+li.innerText=u.nombre
+
+lista.appendChild(li)
+
+})
+
+})
+
+}
+
+function guardar(){
+
+let nombre=document.getElementById("nombre").value
+
+fetch(API+"/usuarios",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+nombre:nombre
+})
+
+})
+
+.then(r=>r.json())
+
+.then(data=>{
+
+cargar()
+
+})
+
+}
+
+cargar()
+
+</script>
+
+</body>
+</html>
