@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 import psycopg2
 from flask_cors import CORS
+import os
 
 app = Flask(__name__, static_folder="static")
 CORS(app)
@@ -89,4 +90,5 @@ def crear_usuario():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
