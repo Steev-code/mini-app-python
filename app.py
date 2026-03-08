@@ -5,10 +5,22 @@ from flask_cors import CORS
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-# conexión a la base de datos (Render PostgreSQL)
+# conexión a PostgreSQL en Render
 conexion = psycopg2.connect(
-"postgresql://prueba_web_user:GZ93s12cp2s6TmdKAWDwkgIjf8DszFvW@dpg-d6mbd2fafjfc7390hgk0-a.oregon-postgres.render.com/prueba_web"
+"postgresql://prueba_web_user:GZ93s12cp2s6TmdKAWDwkgIjf8DszFvW@dpg-d6mbd2fafjfc7390hgk0-a.oregon-postgres.render.com/prueba_web?sslmode=require"
 )
+
+# crear tabla si no existe
+cursor = conexion.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100)
+)
+""")
+conexion.commit()
+cursor.close()
+
 
 # ruta principal
 @app.route("/")
@@ -20,45 +32,60 @@ def inicio():
 @app.route("/usuarios", methods=["GET"])
 def obtener_usuarios():
 
-    cursor = conexion.cursor()
+    try:
+        cursor = conexion.cursor()
 
-    cursor.execute("SELECT * FROM usuarios")
+        cursor.execute("SELECT * FROM usuarios")
 
-    usuarios = cursor.fetchall()
+        usuarios = cursor.fetchall()
 
-    lista = []
+        lista = []
 
-    for u in usuarios:
-        lista.append({
-            "id": u[0],
-            "nombre": u[1]
-        })
+        for u in usuarios:
+            lista.append({
+                "id": u[0],
+                "nombre": u[1]
+            })
 
-    cursor.close()
+        cursor.close()
 
-    return jsonify(lista)
+        return jsonify(lista)
+
+    except Exception as e:
+
+        conexion.rollback()
+
+        return jsonify({"error": str(e)}), 500
 
 
 # crear usuario
 @app.route("/usuarios", methods=["POST"])
 def crear_usuario():
 
-    data = request.json
+    try:
 
-    nombre = data["nombre"]
+        data = request.json
 
-    cursor = conexion.cursor()
+        nombre = data["nombre"]
 
-    cursor.execute(
-        "INSERT INTO usuarios (nombre) VALUES (%s)",
-        (nombre,)
-    )
+        cursor = conexion.cursor()
 
-    conexion.commit()
+        cursor.execute(
+            "INSERT INTO usuarios (nombre) VALUES (%s)",
+            (nombre,)
+        )
 
-    cursor.close()
+        conexion.commit()
 
-    return jsonify({"mensaje": "usuario creado"})
+        cursor.close()
+
+        return jsonify({"mensaje": "usuario creado"})
+
+    except Exception as e:
+
+        conexion.rollback()
+
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
