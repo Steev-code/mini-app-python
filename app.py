@@ -6,35 +6,31 @@ import os
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-# conexión a PostgreSQL en Render
-conexion = psycopg2.connect(
-"postgresql://prueba_web_user:GZ93s12cp2s6TmdKAWDwkgIjf8DszFvW@dpg-d6mbd2fafjfc7390hgk0-a.oregon-postgres.render.com/prueba_web?sslmode=require"
-)
-
-# crear tabla si no existe
-cursor = conexion.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100)
-)
-""")
-conexion.commit()
-cursor.close()
+DATABASE_URL = "postgresql://prueba_web_user:GZ93s12cp2s6TmdKAWDwkgIjf8DszFvW@dpg-d6mbd2fafjfc7390hgk0-a.oregon-postgres.render.com/prueba_web?sslmode=require"
 
 
-# ruta principal
+def conectar_db():
+    return psycopg2.connect(DATABASE_URL)
+
+
 @app.route("/")
 def inicio():
     return send_from_directory("static", "index.html")
 
 
-# obtener usuarios
 @app.route("/usuarios", methods=["GET"])
 def obtener_usuarios():
 
     try:
+        conexion = conectar_db()
         cursor = conexion.cursor()
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100)
+        )
+        """)
 
         cursor.execute("SELECT * FROM usuarios")
 
@@ -49,27 +45,31 @@ def obtener_usuarios():
             })
 
         cursor.close()
+        conexion.close()
 
         return jsonify(lista)
 
     except Exception as e:
-
-        conexion.rollback()
-
         return jsonify({"error": str(e)}), 500
 
 
-# crear usuario
 @app.route("/usuarios", methods=["POST"])
 def crear_usuario():
 
     try:
 
         data = request.json
-
         nombre = data["nombre"]
 
+        conexion = conectar_db()
         cursor = conexion.cursor()
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100)
+        )
+        """)
 
         cursor.execute(
             "INSERT INTO usuarios (nombre) VALUES (%s)",
@@ -79,13 +79,11 @@ def crear_usuario():
         conexion.commit()
 
         cursor.close()
+        conexion.close()
 
         return jsonify({"mensaje": "usuario creado"})
 
     except Exception as e:
-
-        conexion.rollback()
-
         return jsonify({"error": str(e)}), 500
 
 
